@@ -227,7 +227,7 @@ public class FileDownloader {
                     }
                 }
                 if (listener != null)
-                    listener.onDownloadSize(this.downloadSize);// 通知目前已经下载完成的数据长度
+                    listener.onDownloadSize(downloadUrl, this.downloadSize);// 通知目前已经下载完成的数据长度
             }
             if (downloadSize == this.fileSize)
                 fileService.delete(this.downloadUrl);// 下载完成删除记录

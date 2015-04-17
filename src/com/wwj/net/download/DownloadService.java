@@ -15,7 +15,7 @@ public class DownloadService extends Service {
     public static final int PROCESSING = 1;
     public static final int FAILURE = -1;
     public static final int MSG_BAR_MAX = 2;
-    
+
     public static final String SIZE = "size";
     public static final String PATH = "path";
 
@@ -78,11 +78,11 @@ public class DownloadService extends Service {
 
         DownloadProgressListener downloadProgressListener = new DownloadProgressListener() {
             @Override
-            public void onDownloadSize(int size) {
+            public void onDownloadSize(String path, int size) {
                 Message msg = new Message();
-                msg.put(PATH,);
+                msg.getData().putString(PATH, path);
                 msg.what = PROCESSING;
-                msg.getData().putInt(SIZW, size);
+                msg.getData().putInt(SIZE, size);
                 mHandler.sendMessage(msg);
 
             }
