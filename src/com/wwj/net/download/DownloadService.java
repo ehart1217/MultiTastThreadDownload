@@ -2,6 +2,8 @@
 package com.wwj.net.download;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 
 import android.app.Service;
 import android.content.Intent;
@@ -31,27 +33,35 @@ public class DownloadService extends Service {
     }
 
     /*
-     * 由于用户的输入事件(点击button, 触摸屏幕....)是由主线程负责处理的，如果主线程处于工作状态，
+     * 多任务； 由于用户的输入事件(点击button, 触摸屏幕....)是由主线程负责处理的，如果主线程处于工作状态，
      * 此时用户产生的输入事件如果没能在5秒内得到处理，系统就会报“应用无响应”错误。
      * 所以在主线程里不能执行一件比较耗时的工作，否则会因主线程阻塞而无法处理用户的输入事件，
      * 导致“应用无响应”错误的出现。耗时的工作应该在子线程里执行。
      */
-    private DownloadTask task;
+    private Map<String, DownloadTask> mTasks;
+
+    // private DownloadTask task;
 
     private Handler mHandler;
+
+    public DownloadService() {
+        mTasks = new HashMap<String, DownloadTask>();
+    }
 
     public void setHandler(Handler handler) {
         mHandler = handler;
     }
 
-    public void exit() {
+    public void exit(String path) {
+        DownloadTask task = mTasks.get(path);
         if (task != null)
             task.exit();
     }
 
     public void download(String path, File savDir) {
-        task = new DownloadTask(path, savDir);
+        DownloadTask task = new DownloadTask(path, savDir);
         new Thread(task).start();
+        mTasks.put(path, task);
     }
 
     /**
@@ -98,6 +108,7 @@ public class DownloadService extends Service {
                 Message msg = new Message();
                 msg.what = MSG_BAR_MAX;
                 msg.arg1 = loader.getFileSize();
+                msg.getData().putString(PATH, path);
                 mHandler.sendMessage(msg);
 
                 // 开始下载

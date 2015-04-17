@@ -1,9 +1,8 @@
 
 package com.wwj.download;
 
-import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.List;
 
 import android.app.Activity;
 import android.content.ComponentName;
@@ -11,48 +10,49 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
-import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.ProgressBar;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import com.wwj.download.adapter.DownloadListAdapter;
 import com.wwj.net.download.DownloadService;
 
 public class MainActivity extends Activity {
     private static final int PROCESSING = 1;
     private static final int FAILURE = -1;
 
-    private EditText pathText; // urlµÿ÷∑
-    private TextView resultView;
-    private Button downloadButton;
-    private Button stopButton;
-    private ProgressBar progressBar;
+    // private EditText pathText; // urlÂú∞ÂùÄ
+    // private TextView resultView;
+    // private Button downloadButton;
+    // private Button stopButton;
+    // private ProgressBar progressBar;
 
     private Handler mHandler = new UIHandler();
 
     private DownloadService mDlService;
+
+    private DownloadListAdapter mAdapter;
 
     private Context mContext;
 
     private final class UIHandler extends Handler {
         public void handleMessage(Message msg) {
             switch (msg.what) {
-                case PROCESSING: // ∏¸–¬Ω¯∂»
-                    updateProgressBar(msg.getData().getInt("size"));
+                case PROCESSING: // Êõ¥Êñ∞ËøõÂ∫¶
+                    String path = msg.getData().getString(DownloadService.PATH);
+                    updateProgressBar(path, msg.getData().getInt("size"));
                     break;
-                case FAILURE: // œ¬‘ÿ ß∞‹
+                case FAILURE: // ‰∏ãËΩΩÂ§±Ë¥•
                     Toast.makeText(getApplicationContext(), R.string.error,
                             Toast.LENGTH_LONG).show();
                     break;
                 case DownloadService.MSG_BAR_MAX:
                     int max = msg.arg1;
-                    progressBar.setMax(max);
+                    String path_max = (String) msg.getData().get(DownloadService.PATH);
+                    mAdapter.getProgressBar(path_max).setMax(max);
                     break;
             }
         }
@@ -63,78 +63,77 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         mContext = this;
         setContentView(R.layout.main);
-        pathText = (EditText) findViewById(R.id.path);
-        resultView = (TextView) findViewById(R.id.resultView);
-        downloadButton = (Button) findViewById(R.id.downloadbutton);
-        stopButton = (Button) findViewById(R.id.stopbutton);
-        progressBar = (ProgressBar) findViewById(R.id.progressBar);
-        ButtonClickListener listener = new ButtonClickListener();
-        downloadButton.setOnClickListener(listener);
-        stopButton.setOnClickListener(listener);
+        // pathText = (EditText) findViewById(R.id.path);
+        // resultView = (TextView) findViewById(R.id.resultView);
+        // downloadButton = (Button) findViewById(R.id.downloadbutton);
+        // stopButton = (Button) findViewById(R.id.stopbutton);
+        // progressBar = (ProgressBar) findViewById(R.id.progressBar);
+        // ButtonClickListener listener = new ButtonClickListener();
+        // downloadButton.setOnClickListener(listener);
+        // stopButton.setOnClickListener(listener);
+        List<String> paths = new ArrayList<String>();
+        paths.add("http://abv.cn/music/list.php");
+        paths.add("http://abv.cn/music/ÂÖâËæâÂ≤ÅÊúà.mp3");
+        paths.add("https://github.com/ehart1217/MyDownloadThread/archive/master.zip");
+        ListView listView = (ListView) this.findViewById(R.id.download_listview);
+        mAdapter = new DownloadListAdapter(mContext, paths);
+        listView.setAdapter(mAdapter);
         bindDownloadService();
     }
 
-    private final class ButtonClickListener implements View.OnClickListener {
-        @Override
-        public void onClick(View v) {
-            switch (v.getId()) {
-                case R.id.downloadbutton: // ø™ ºœ¬‘ÿ
-                    // http://abv.cn/music/π‚ª‘ÀÍ‘¬.mp3£¨ø…“‘ªª≥…∆‰À˚Œƒº˛œ¬‘ÿµƒ¡¥Ω”
-                    String path = pathText.getText().toString();
-                    String filename = path.substring(path.lastIndexOf('/') + 1);
+    // private final class ButtonClickListener implements View.OnClickListener {
+    // @Override
+    // public void onClick(View v) {
+    // switch (v.getId()) {
+    // case R.id.downloadbutton: // ÂºÄÂßã‰∏ãËΩΩ
+    // // http://abv.cn/music/ÂÖâËæâÂ≤ÅÊúà.mp3ÔºåÂèØ‰ª•Êç¢ÊàêÂÖ∂‰ªñÊñá‰ª∂‰∏ãËΩΩÁöÑÈìæÊé•
+    // String path = CommonTools.getEncodePath(pathText.getText().toString());//
+    // Â∞ÜË∑ØÂæÑÂÖàËΩ¨Á†Å
+    // if (Environment.getExternalStorageState().equals(
+    // Environment.MEDIA_MOUNTED)) {
+    // // File savDir =
+    // //
+    // Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
+    // // ‰øùÂ≠òË∑ØÂæÑ
+    // File savDir = Environment.getExternalStorageDirectory();// Ê†πÁõÆÂΩï
+    // if (mDlService != null) {
+    // mDlService.download(path, savDir);
+    // } else {
+    // Toast.makeText(getApplicationContext(),
+    // "wait for service starting", Toast.LENGTH_LONG).show();
+    // }
+    // } else {
+    // Toast.makeText(getApplicationContext(),
+    // R.string.sdcarderror, Toast.LENGTH_LONG).show();
+    // }
+    // downloadButton.setEnabled(false);
+    // stopButton.setEnabled(true);
+    // break;
+    // case R.id.stopbutton: // ÊöÇÂÅú‰∏ãËΩΩ
+    // if (mDlService != null) {
+    // mDlService.exit(CommonTools.getEncodePath(pathText.getText().toString()));
+    // Toast.makeText(getApplicationContext(),
+    // "Now thread is Stopping!!", Toast.LENGTH_LONG).show();
+    // downloadButton.setEnabled(true);
+    // stopButton.setEnabled(false);
+    // } else {
+    // Toast.makeText(getApplicationContext(),
+    // "wait for service starting", Toast.LENGTH_LONG).show();
+    // }
+    //
+    // break;
+    // }
+    // }
+    //
+    // }
 
-                    try {
-                        // URL±‡¬Î£®’‚¿Ô «Œ™¡ÀΩ´÷–ŒƒΩ¯––URL±‡¬Î£©
-                        filename = URLEncoder.encode(filename, "UTF-8");
-                    } catch (UnsupportedEncodingException e) {
-                        e.printStackTrace();
-                    }
-
-                    // ◊™¬Î∫Ûµƒ¬∑æ∂
-                    path = path.substring(0, path.lastIndexOf("/") + 1) + filename;
-                    if (Environment.getExternalStorageState().equals(
-                            Environment.MEDIA_MOUNTED)) {
-                        // File savDir =
-                        // Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
-                        // ±£¥Ê¬∑æ∂
-                        File savDir = Environment.getExternalStorageDirectory();// ∏˘ƒø¬º
-                        if (mDlService != null) {
-                            mDlService.download(path, savDir);
-                        } else {
-                            Toast.makeText(getApplicationContext(),
-                                    "wait for service starting", Toast.LENGTH_LONG).show();
-                        }
-                    } else {
-                        Toast.makeText(getApplicationContext(),
-                                R.string.sdcarderror, Toast.LENGTH_LONG).show();
-                    }
-                    downloadButton.setEnabled(false);
-                    stopButton.setEnabled(true);
-                    break;
-                case R.id.stopbutton: // ‘›Õ£œ¬‘ÿ
-                    if (mDlService != null) {
-                        mDlService.exit();
-                        Toast.makeText(getApplicationContext(),
-                                "Now thread is Stopping!!", Toast.LENGTH_LONG).show();
-                        downloadButton.setEnabled(true);
-                        stopButton.setEnabled(false);
-                    } else {
-                        Toast.makeText(getApplicationContext(),
-                                "wait for service starting", Toast.LENGTH_LONG).show();
-                    }
-
-                    break;
-            }
-        }
-
-    }
-
-    private void updateProgressBar(int size) {
+    private void updateProgressBar(String path, int size) {
+        ProgressBar progressBar = mAdapter.getProgressBar(path);
         progressBar.setProgress(size);
         float num = (float) progressBar.getProgress()
                 / (float) progressBar.getMax();
-        int result = (int) (num * 100); // º∆À„Ω¯∂»
-        resultView.setText(result + "%");
+        int result = (int) (num * 100); // ËÆ°ÁÆóËøõÂ∫¶
+        mAdapter.getResultView(path).setText(result + "%");
         if (progressBar.getProgress() == progressBar.getMax()) {
             Toast.makeText(getApplicationContext(), R.string.success,
                     Toast.LENGTH_LONG).show();
@@ -152,6 +151,7 @@ public class MainActivity extends Activity {
         public void onServiceConnected(ComponentName name, IBinder service) {
             mDlService = ((DownloadService.DlBinder) service).getService();
             mDlService.setHandler(mHandler);
+            mAdapter.setService(mDlService);
         }
     };
 
