@@ -74,7 +74,7 @@ public class MainActivity extends Activity {
         List<String> paths = new ArrayList<String>();
         paths.add("http://abv.cn/music/list.php");
         paths.add("http://abv.cn/music/光辉岁月.mp3");
-        paths.add("https://github.com/ehart1217/MyDownloadThread/archive/master.zip");
+        // paths.add("https://github.com/ehart1217/MyDownloadThread/archive/master.zip");
         ListView listView = (ListView) this.findViewById(R.id.download_listview);
         mAdapter = new DownloadListAdapter(mContext, paths);
         listView.setAdapter(mAdapter);
