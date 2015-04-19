@@ -13,15 +13,21 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import android.content.Context;
-import android.util.Log;
+
+import com.wwj.download.adapter.DownloadListAdapter;
 
 /**
  * 文件下载器
  */
 public class FileDownloader {
-    private static final String TAG = "FileDownloader";
+    // private static final String TAG = "FileDownloader";
     private Context context;
     private FileService fileService;
+
+    /**
+     * 下载是否完成
+     */
+    private boolean isFinished = false;
     /** 停止下载 */
     private boolean exit;
     /** 已下载文件长度 */
@@ -227,12 +233,18 @@ public class FileDownloader {
                     }
                 }
                 if (listener != null)
-                    listener.onDownloadSize(downloadUrl, this.downloadSize);// 通知目前已经下载完成的数据长度
+                    listener.onDownloadingSize(downloadUrl, this.downloadSize);// 通知目前已经下载完成的数据长度
             }
-            if (downloadSize == this.fileSize)
+            if (downloadSize == this.fileSize) {
+                isFinished = true;
                 fileService.delete(this.downloadUrl);// 下载完成删除记录
+                if (listener != null)
+                    listener.onDownloadingSize(downloadUrl, this.downloadSize);// 通知目前已经下载完成
+            } else if (listener != null) {
+                listener.onPause(downloadUrl);
+            }
         } catch (Exception e) {
-            print(e.toString());
+            print("错误e:" + e.toString());
             throw new Exception("file download error");
         }
         return this.downloadSize;
@@ -269,7 +281,12 @@ public class FileDownloader {
         }
     }
 
+    public boolean isFinished() {
+        return isFinished;
+    }
+
     private static void print(String msg) {
-        Log.i(TAG, msg);
+        DownloadListAdapter.print(msg);
+        // Log.i(TAG, msg);
     }
 }

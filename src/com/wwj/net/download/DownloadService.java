@@ -11,25 +11,56 @@ import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.util.Log;
+
+import com.wwj.download.adapter.DownloadListAdapter;
 
 public class DownloadService extends Service {
+
+    public static final String TAG = "DownloadService";
 
     public static final int PROCESSING = 1;
     public static final int FAILURE = -1;
     public static final int MSG_BAR_MAX = 2;
+    public static final int PAUSE = 3;
 
     public static final String SIZE = "size";
     public static final String PATH = "path";
-
-    @Override
-    public IBinder onBind(Intent intent) {
-        return new DlBinder();
-    }
 
     public class DlBinder extends Binder {
         public DownloadService getService() {
             return DownloadService.this;
         }
+    }
+
+    @Override
+    public void onCreate() {
+        Log.i(TAG, "onCreate");
+        super.onCreate();
+    }
+
+    @Override
+    public IBinder onBind(Intent intent) {
+        Log.i(TAG, "onBind");
+        return new DlBinder();
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        Log.i(TAG, "onStartCommand");
+        return super.onStartCommand(intent, flags, startId);
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        Log.i(TAG, "onUnbind");
+        return super.onUnbind(intent);
+    }
+
+    @Override
+    public void onDestroy() {
+        Log.i(TAG, "onDestroy");
+        super.onDestroy();
     }
 
     /*
@@ -52,16 +83,29 @@ public class DownloadService extends Service {
         mHandler = handler;
     }
 
+    /**
+     * 暂停相应的下载任务，如果任务没有了就调用stopSelf
+     * 
+     * @param path
+     */
     public void exit(String path) {
         DownloadTask task = mTasks.get(path);
-        if (task != null)
+        if (task != null) {
             task.exit();
+            mTasks.remove(path);
+            if (mTasks.size() <= 0) {
+                this.stopSelf();
+            }
+        }
     }
 
     public void download(String path, File savDir) {
-        DownloadTask task = new DownloadTask(path, savDir);
-        new Thread(task).start();
-        mTasks.put(path, task);
+        if ((mTasks != null && !mTasks.containsKey(path))
+                || (mTasks != null && !mTasks.get(path).isRunning)) {
+            DownloadTask task = new DownloadTask(path, savDir);
+            new Thread(task).start();
+            mTasks.put(path, task);
+        }
     }
 
     /**
@@ -78,6 +122,8 @@ public class DownloadService extends Service {
             this.saveDir = saveDir;
         }
 
+        private boolean isRunning = false;
+
         /**
          * 退出下载
          */
@@ -86,14 +132,42 @@ public class DownloadService extends Service {
                 loader.exit();
         }
 
+        public boolean isRunning() {
+            return isRunning;
+        }
+
         DownloadProgressListener downloadProgressListener = new DownloadProgressListener() {
             @Override
-            public void onDownloadSize(String path, int size) {
+            public void onDownloadingSize(String path, int size) {
+                if (mHandler != null) {
+                    Message msg2 = new Message();
+                    msg2.what = MSG_BAR_MAX;
+                    msg2.arg1 = loader.getFileSize();
+                    msg2.getData().putString(PATH, path);
+                    mHandler.sendMessage(msg2);
+
+                    Message msg = new Message();
+                    msg.getData().putString(PATH, path);
+                    msg.what = PROCESSING;
+                    msg.getData().putInt(SIZE, size);
+                    mHandler.sendMessage(msg);
+                }
+                if (size == loader.getFileSize()) {// 下载完成
+                    mTasks.remove(path);
+                }
+            }
+
+            @Override
+            public void onPause(String path) {
+                // 发送暂停消息
                 Message msg = new Message();
                 msg.getData().putString(PATH, path);
-                msg.what = PROCESSING;
-                msg.getData().putInt(SIZE, size);
+                msg.what = PAUSE;
                 mHandler.sendMessage(msg);
+            }
+
+            @Override
+            public void onFinish(String path) {
 
             }
         };
@@ -102,14 +176,18 @@ public class DownloadService extends Service {
         public void run() {
             try {
                 // 实例化一个文件下载器
+                isRunning = true;
                 loader = new FileDownloader(getApplicationContext(), path,
                         saveDir, 3);
                 // 发送设置进度条最大值
-                Message msg = new Message();
-                msg.what = MSG_BAR_MAX;
-                msg.arg1 = loader.getFileSize();
-                msg.getData().putString(PATH, path);
-                mHandler.sendMessage(msg);
+                print("to setmax : handler=" + mHandler);
+                if (mHandler != null) {
+                    Message msg = new Message();
+                    msg.what = MSG_BAR_MAX;
+                    msg.arg1 = loader.getFileSize();
+                    msg.getData().putString(PATH, path);
+                    mHandler.sendMessage(msg);
+                }
 
                 // 开始下载
                 loader.download(downloadProgressListener);
@@ -117,7 +195,12 @@ public class DownloadService extends Service {
                 e.printStackTrace();
                 mHandler.sendMessage(mHandler.obtainMessage(FAILURE)); // 发送一条空消息对象
             }
+            isRunning = false;
         }
+
     }
 
+    private void print(String str) {
+        DownloadListAdapter.print(str);
+    }
 }

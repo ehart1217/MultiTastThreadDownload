@@ -5,13 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import android.app.Activity;
-import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.IBinder;
 import android.os.Message;
 import android.widget.ListView;
 import android.widget.ProgressBar;
@@ -24,15 +20,7 @@ public class MainActivity extends Activity {
     private static final int PROCESSING = 1;
     private static final int FAILURE = -1;
 
-    // private EditText pathText; // url地址
-    // private TextView resultView;
-    // private Button downloadButton;
-    // private Button stopButton;
-    // private ProgressBar progressBar;
-
     private Handler mHandler = new UIHandler();
-
-    private DownloadService mDlService;
 
     private DownloadListAdapter mAdapter;
 
@@ -40,17 +28,23 @@ public class MainActivity extends Activity {
 
     private final class UIHandler extends Handler {
         public void handleMessage(Message msg) {
+            String path = msg.getData().getString(DownloadService.PATH);
             switch (msg.what) {
                 case PROCESSING: // 更新进度
-                    String path = msg.getData().getString(DownloadService.PATH);
-                    updateProgressBar(path, msg.getData().getInt("size"));
+                    // print("handler msg path:" + path);
+
+                    updateListView(path, msg.getData().getInt("size"));
                     break;
                 case FAILURE: // 下载失败
                     Toast.makeText(getApplicationContext(), R.string.error,
                             Toast.LENGTH_LONG).show();
+                    updateListViewPause(path);// 更新UI,切换开关
+                case DownloadService.PAUSE: // 暂停
+                    updateListViewPause(path);// 更新UI,切换开关
                     break;
                 case DownloadService.MSG_BAR_MAX:
                     int max = msg.arg1;
+                    print("handle msg setmax:" + max);
                     String path_max = (String) msg.getData().get(DownloadService.PATH);
                     mAdapter.getProgressBar(path_max).setMax(max);
                     break;
@@ -63,101 +57,69 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         mContext = this;
         setContentView(R.layout.main);
-        // pathText = (EditText) findViewById(R.id.path);
-        // resultView = (TextView) findViewById(R.id.resultView);
-        // downloadButton = (Button) findViewById(R.id.downloadbutton);
-        // stopButton = (Button) findViewById(R.id.stopbutton);
-        // progressBar = (ProgressBar) findViewById(R.id.progressBar);
-        // ButtonClickListener listener = new ButtonClickListener();
-        // downloadButton.setOnClickListener(listener);
-        // stopButton.setOnClickListener(listener);
         List<String> paths = new ArrayList<String>();
         paths.add("http://abv.cn/music/list.php");
         paths.add("http://abv.cn/music/光辉岁月.mp3");
-        // paths.add("https://github.com/ehart1217/MyDownloadThread/archive/master.zip");
+        paths.add("http://sc.111ttt.com/up/mp3/304296/937161E63A1D57484158C7464D7B50B7.mp3");
+        paths.add("http://mp3.wooeu.com/mp3.php/19344853/mp3wooeu.mp3");
+        paths.add("http://qzone.haoduoge.com/music5/2015-04-19/1429440483.mp3");
+        paths.add("http://qzone.haoduoge.com/music5/2015-04-19/1429436647.mp3");
+        paths.add("http://qzone.haoduoge.com/music5/2015-04-19/1429440637.mp3");
+
         ListView listView = (ListView) this.findViewById(R.id.download_listview);
-        mAdapter = new DownloadListAdapter(mContext, paths);
+        mAdapter = new DownloadListAdapter(mContext, paths, mHandler);
         listView.setAdapter(mAdapter);
-        bindDownloadService();
     }
 
-    // private final class ButtonClickListener implements View.OnClickListener {
-    // @Override
-    // public void onClick(View v) {
-    // switch (v.getId()) {
-    // case R.id.downloadbutton: // 开始下载
-    // // http://abv.cn/music/光辉岁月.mp3，可以换成其他文件下载的链接
-    // String path = CommonTools.getEncodePath(pathText.getText().toString());//
-    // 将路径先转码
-    // if (Environment.getExternalStorageState().equals(
-    // Environment.MEDIA_MOUNTED)) {
-    // // File savDir =
-    // //
-    // Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES);
-    // // 保存路径
-    // File savDir = Environment.getExternalStorageDirectory();// 根目录
-    // if (mDlService != null) {
-    // mDlService.download(path, savDir);
-    // } else {
-    // Toast.makeText(getApplicationContext(),
-    // "wait for service starting", Toast.LENGTH_LONG).show();
-    // }
-    // } else {
-    // Toast.makeText(getApplicationContext(),
-    // R.string.sdcarderror, Toast.LENGTH_LONG).show();
-    // }
-    // downloadButton.setEnabled(false);
-    // stopButton.setEnabled(true);
-    // break;
-    // case R.id.stopbutton: // 暂停下载
-    // if (mDlService != null) {
-    // mDlService.exit(CommonTools.getEncodePath(pathText.getText().toString()));
-    // Toast.makeText(getApplicationContext(),
-    // "Now thread is Stopping!!", Toast.LENGTH_LONG).show();
-    // downloadButton.setEnabled(true);
-    // stopButton.setEnabled(false);
-    // } else {
-    // Toast.makeText(getApplicationContext(),
-    // "wait for service starting", Toast.LENGTH_LONG).show();
-    // }
-    //
-    // break;
-    // }
-    // }
-    //
-    // }
+    @Override
+    protected void onDestroy() {
+        mAdapter.unbindDownloadService();
+        super.onDestroy();
+    }
 
-    private void updateProgressBar(String path, int size) {
+    /**
+     * @param path
+     * @param size
+     */
+    private void updateListView(String path, int size) {
+
         ProgressBar progressBar = mAdapter.getProgressBar(path);
         progressBar.setProgress(size);
+        // print("handler msg size:" + size);
+        // print("handler msg size max" + progressBar.getMax());
         float num = (float) progressBar.getProgress()
                 / (float) progressBar.getMax();
         int result = (int) (num * 100); // 计算进度
         mAdapter.getResultView(path).setText(result + "%");
+
         if (progressBar.getProgress() == progressBar.getMax()) {
             Toast.makeText(getApplicationContext(), R.string.success,
                     Toast.LENGTH_LONG).show();
+            btnChange(path, true);
+
+        } else {
+            btnChange(path, false);
         }
+        mAdapter.notifyDataSetChanged();
     }
 
-    ServiceConnection conn = new ServiceConnection() {
+    private void updateListViewPause(String path) {
+        btnChange(path, true);
+    }
 
-        @Override
-        public void onServiceDisconnected(ComponentName name) {
+    /**
+     * 切换暂停和开始按钮
+     * 
+     * @param path
+     * @param b start设置为b；pause设置为!b
+     */
+    private void btnChange(String path, boolean b) {
+        mAdapter.getViewHolder(path).downloadBtn.setEnabled(b);
+        mAdapter.getViewHolder(path).pauseBtn.setEnabled(!b);
+    }
 
-        }
-
-        @Override
-        public void onServiceConnected(ComponentName name, IBinder service) {
-            mDlService = ((DownloadService.DlBinder) service).getService();
-            mDlService.setHandler(mHandler);
-            mAdapter.setService(mDlService);
-        }
-    };
-
-    private void bindDownloadService() {
-        Intent bindIntent = new Intent(mContext, DownloadService.class);
-        bindService(bindIntent, conn, BIND_AUTO_CREATE);
+    private void print(String str) {
+        DownloadListAdapter.print(str);
     }
 
 }
