@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -28,6 +29,7 @@ import android.widget.Toast;
 import com.wwj.download.R;
 import com.wwj.download.util.CommonTools;
 import com.wwj.net.download.DownloadService;
+import com.wwj.net.download.FileService;
 
 /**
  * 下载列表适配器
@@ -96,8 +98,17 @@ public class DownloadListAdapter extends BaseAdapter {
 
     @Override
     public View getView(final int position, View convertView, ViewGroup parent) {
+        String path = mEncodedPaths.get(position);// 获得已转码路径
         ViewHolder viewHolder = (ViewHolder) mConvertViews.get(position).getTag();
-
+        // 设置进度条
+        viewHolder.progressBar.setMax(getFileSize(path));
+        viewHolder.progressBar.setProgress(getDownloadSize(path));
+        // 设置已下载百分比
+        float num = (float) viewHolder.progressBar.getProgress()
+                / (float) viewHolder.progressBar.getMax();
+        int result = (int) (num * 100); // 计算进度
+        viewHolder.resultView.setText(result + "%");
+        // 路径显示出来。
         viewHolder.editView.setText(mPaths.get(position));
         viewHolder.downloadBtn.setOnClickListener(new View.OnClickListener() {
 
@@ -139,13 +150,6 @@ public class DownloadListAdapter extends BaseAdapter {
             // 保存路径
             File savDir = Environment.getExternalStorageDirectory();// 根目录
             if (mService != null) {
-
-                // ViewHolder vh = mHolders.get(path);
-                // if (vh != null) {
-                // vh.pauseBtn.setEnabled(true);
-                // vh.downloadBtn.setEnabled(false);
-                // }
-
                 startDownloadService();
                 mService.download(path, savDir);
 
@@ -166,11 +170,6 @@ public class DownloadListAdapter extends BaseAdapter {
             mService.exit(path);
             Toast.makeText(mContext,
                     "Now thread is Stopping!!", Toast.LENGTH_LONG).show();
-            // ViewHolder vh = mHolders.get(path);
-            // if (vh != null) {
-            // vh.pauseBtn.setEnabled(false);
-            // vh.downloadBtn.setEnabled(true);
-            // }
         } else {
             Toast.makeText(mContext,
                     "wait for service starting", Toast.LENGTH_LONG).show();
@@ -247,6 +246,38 @@ public class DownloadListAdapter extends BaseAdapter {
         if (mService != null) {
             mService.stopSelf();
         }
+    }
+
+    /**
+     * 得到相应路径的文件大小
+     * 
+     * @param path
+     * @return
+     */
+    private int getFileSize(String path) {
+        return new FileService(mContext).getFileSize(path);
+    }
+
+    /**
+     * 从数据库中得到相应路径已下载的大小
+     * 
+     * @param path
+     * @return
+     */
+    private int getDownloadSize(String path) {
+        FileService fileService = new FileService(mContext);
+        Map<Integer, Integer> data = new ConcurrentHashMap<Integer, Integer>();
+        Map<Integer, Integer> logdata = fileService
+                .getData(path);// 获取下载记录
+        if (logdata.size() > 0) {// 如果存在下载记录
+            for (Map.Entry<Integer, Integer> entry : logdata.entrySet())
+                data.put(entry.getKey(), entry.getValue());// 把各条线程已经下载的数据长度放入data中
+        }
+        int size = 0;
+        for (int i = 0; i < data.size(); i++) {
+            size += data.get(i + 1);
+        }
+        return size;
     }
 
     public static void print(String str) {

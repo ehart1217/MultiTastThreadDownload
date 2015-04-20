@@ -158,9 +158,7 @@ public class FileDownloader {
                 }
                 this.threads = new DownloadThread[threadNum];// 实例化线程数组
                 if (this.data.size() == this.threads.length && isAccepteRange) {// 下面计算所有线程已经下载的数据总长度
-                    for (int i = 0; i < this.threads.length; i++) {
-                        this.downloadSize += this.data.get(i + 1);
-                    }
+                    downloadSize = getAllDownloadSize();
                     print("已经下载的长度" + this.downloadSize);
                 }
                 // 计算每条线程下载的数据长度
@@ -236,7 +234,7 @@ public class FileDownloader {
                 }
             }
             fileService.delete(this.downloadUrl);// 如果存在下载记录，删除它们，然后重新添加
-            fileService.save(this.downloadUrl, this.data);
+            fileService.save(this.downloadUrl, this.data, getFileSize());
             boolean notFinish = true;// 下载未完成
             while (notFinish) {// 循环判断所有线程是否完成下载
                 Thread.sleep(900);
@@ -317,6 +315,19 @@ public class FileDownloader {
 
     public boolean isFinished() {
         return isFinished;
+    }
+
+    // 得到所有线程已下载数量
+    private int getAllDownloadSize() {
+        int size = 0;
+        for (int i = 0; i < this.data.size(); i++) {
+            size += this.data.get(i + 1);
+        }
+        return size;
+    }
+
+    public int getDownloadSize() {
+        return downloadSize;
     }
 
     private static void print(String msg) {

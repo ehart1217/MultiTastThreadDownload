@@ -140,17 +140,11 @@ public class DownloadService extends Service {
             @Override
             public void onDownloadingSize(String path, int size) {
                 if (mHandler != null) {
-                    Message msg2 = new Message();
-                    msg2.what = MSG_BAR_MAX;
-                    msg2.arg1 = loader.getFileSize();
-                    msg2.getData().putString(PATH, path);
-                    mHandler.sendMessage(msg2);
+                    // 发送文件最大值，好奇怪，不反复发最大值就会变成100
+                    sendMaxMsg(loader.getFileSize());
 
-                    Message msg = new Message();
-                    msg.getData().putString(PATH, path);
-                    msg.what = PROCESSING;
-                    msg.getData().putInt(SIZE, size);
-                    mHandler.sendMessage(msg);
+                    // 更新进度条
+                    sendProgressMsg(size);
                 }
                 if (size == loader.getFileSize()) {// 下载完成
                     mTasks.remove(path);
@@ -160,10 +154,7 @@ public class DownloadService extends Service {
             @Override
             public void onPause(String path) {
                 // 发送暂停消息
-                Message msg = new Message();
-                msg.getData().putString(PATH, path);
-                msg.what = PAUSE;
-                mHandler.sendMessage(msg);
+                sendPauseMsg();
             }
 
             @Override
@@ -179,16 +170,14 @@ public class DownloadService extends Service {
                 isRunning = true;
                 loader = new FileDownloader(getApplicationContext(), path,
                         saveDir, 3);
-                // 发送设置进度条最大值
+                loader.getDownloadSize();
                 print("to setmax : handler=" + mHandler);
                 if (mHandler != null) {
-                    Message msg = new Message();
-                    msg.what = MSG_BAR_MAX;
-                    msg.arg1 = loader.getFileSize();
-                    msg.getData().putString(PATH, path);
-                    mHandler.sendMessage(msg);
+                    // 发送设置进度条最大值
+                    sendMaxMsg(loader.getFileSize());
+                    // 发送当前已下载
+                    sendProgressMsg(loader.getDownloadSize());
                 }
-
                 // 开始下载
                 loader.download(downloadProgressListener);
             } catch (Exception e) {
@@ -204,6 +193,36 @@ public class DownloadService extends Service {
             }
         }
 
+        // 更新进度条最大值
+        private void sendMaxMsg(int size) {
+            if (mHandler != null) {
+                // 发送文件最大值，好奇怪，不反复发最大值就会变成100
+                Message msg1 = new Message();
+                msg1.what = MSG_BAR_MAX;
+                msg1.arg1 = size;
+                msg1.getData().putString(PATH, path);
+                mHandler.sendMessage(msg1);
+            }
+        }
+
+        // 更新进度条
+        private void sendProgressMsg(int size) {
+            if (mHandler != null) {
+                Message msg = new Message();
+                msg.getData().putString(PATH, path);
+                msg.what = PROCESSING;
+                msg.getData().putInt(SIZE, size);
+                mHandler.sendMessage(msg);
+            }
+        }
+
+        // 通知暂停
+        private void sendPauseMsg() {
+            Message msg = new Message();
+            msg.getData().putString(PATH, path);
+            msg.what = PAUSE;
+            mHandler.sendMessage(msg);
+        }
     }
 
     private void print(String str) {

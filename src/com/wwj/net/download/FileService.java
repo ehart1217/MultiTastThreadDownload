@@ -7,6 +7,7 @@ import java.util.Map;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
 import android.util.Log;
 
 import com.wwj.download.db.DBOpenHelper;
@@ -45,22 +46,47 @@ public class FileService {
         return data;
     }
 
+    public int getFileSize(String path) {
+        SQLiteDatabase db = openHelper.getReadableDatabase();
+        Cursor cursor = null;
+        try {
+            cursor = db
+                    .rawQuery(
+                            "select filesize from filedownlog where downpath=?",
+                            new String[] {
+                                path
+                            });
+        } catch (SQLiteException e) {
+            e.printStackTrace();
+            delete(path);
+        }
+
+        int size = 0;
+        while (cursor != null && cursor.moveToNext()) {
+            size = cursor.getInt(0);
+        }
+        cursor.close();
+        db.close();
+        return size;
+    }
+
     /**
      * 保存每条线程已经下载的文件长度
      * 
      * @param path
      * @param map
      */
-    public void save(String path, Map<Integer, Integer> map) {// int threadid,
-                                                              // int position
+    public void save(String path, Map<Integer, Integer> map, int fileSize) {// int
+                                                                            // threadid,
+        // int position
         SQLiteDatabase db = openHelper.getWritableDatabase();
         db.beginTransaction();
         try {
             for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
                 db.execSQL(
-                        "insert into filedownlog(downpath, threadid, downlength) values(?,?,?)",
+                        "insert into filedownlog(downpath, threadid, downlength, filesize) values(?,?,?,?)",
                         new Object[] {
-                                path, entry.getKey(), entry.getValue()
+                                path, entry.getKey(), entry.getValue(), fileSize
                         });
             }
             db.setTransactionSuccessful();
