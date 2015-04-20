@@ -196,6 +196,12 @@ public class DownloadService extends Service {
                 mHandler.sendMessage(mHandler.obtainMessage(FAILURE)); // 发送一条空消息对象
             }
             isRunning = false;
+            if (mTasks.containsKey(path)) {
+                mTasks.remove(path);
+                if (mTasks.size() <= 0) {
+                    DownloadService.this.stopSelf();
+                }
+            }
         }
 
     }
