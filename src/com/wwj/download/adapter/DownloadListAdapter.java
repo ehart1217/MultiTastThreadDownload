@@ -50,6 +50,7 @@ public class DownloadListAdapter extends BaseAdapter {
     private Context mContext;
     private DownloadService mService;
     private Map<String, ViewHolder> mHolders;
+    private List<View> mConvertViews;
     /**
      * 处理service发送过来的消息
      */
@@ -68,12 +69,13 @@ public class DownloadListAdapter extends BaseAdapter {
         mContext = context;
         mHandler = handler;
         mHolders = new HashMap<String, ViewHolder>();
+        mConvertViews = new ArrayList<View>();
         mEncodedPaths = new ArrayList<String>();
         for (String path : paths) {
             String encodedPath = encodePath(path);
             mEncodedPaths.add(encodedPath);
         }
-
+        createViews(mEncodedPaths);
         bindDownloadService();// 绑定服务，可以和activity交互
     }
 
@@ -94,20 +96,7 @@ public class DownloadListAdapter extends BaseAdapter {
 
     @Override
     public View getView(final int position, View convertView, ViewGroup parent) {
-        ViewHolder viewHolder;
-        if (convertView == null) {
-            convertView = LayoutInflater.from(mContext).inflate(R.layout.download_item, parent,
-                    false);
-            viewHolder = new ViewHolder();
-            viewHolder.editView = (EditText) convertView.findViewById(R.id.path);
-            viewHolder.downloadBtn = (Button) convertView.findViewById(R.id.downloadbutton);
-            viewHolder.pauseBtn = (Button) convertView.findViewById(R.id.stopbutton);
-            viewHolder.progressBar = (ProgressBar) convertView.findViewById(R.id.progressBar);
-            viewHolder.resultView = (TextView) convertView.findViewById(R.id.resultView);
-            convertView.setTag(viewHolder);
-        } else {
-            viewHolder = (ViewHolder) convertView.getTag();
-        }
+        ViewHolder viewHolder = (ViewHolder) mConvertViews.get(position).getTag();
 
         viewHolder.editView.setText(mPaths.get(position));
         viewHolder.downloadBtn.setOnClickListener(new View.OnClickListener() {
@@ -125,9 +114,22 @@ public class DownloadListAdapter extends BaseAdapter {
             }
         });
 
-        mHolders.put(mEncodedPaths.get(position), viewHolder);
+        return mConvertViews.get(position);
+    }
 
-        return convertView;
+    void createViews(List<String> paths) {
+        for (String path : paths) {
+            View convertView = LayoutInflater.from(mContext).inflate(R.layout.download_item, null);
+            ViewHolder viewHolder = new ViewHolder();
+            viewHolder.editView = (EditText) convertView.findViewById(R.id.path);
+            viewHolder.downloadBtn = (Button) convertView.findViewById(R.id.downloadbutton);
+            viewHolder.pauseBtn = (Button) convertView.findViewById(R.id.stopbutton);
+            viewHolder.progressBar = (ProgressBar) convertView.findViewById(R.id.progressBar);
+            viewHolder.resultView = (TextView) convertView.findViewById(R.id.resultView);
+            convertView.setTag(viewHolder);
+            mConvertViews.add(convertView);
+            mHolders.put(path, viewHolder);
+        }
     }
 
     // 点击下载的时候的处理

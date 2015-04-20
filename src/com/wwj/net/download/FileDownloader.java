@@ -13,6 +13,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import android.content.Context;
+import android.widget.Toast;
 
 import com.wwj.download.adapter.DownloadListAdapter;
 
@@ -52,6 +53,8 @@ public class FileDownloader {
         return threads.length;
     }
 
+    private boolean isAccepteRange = false;
+
     /**
      * 退出下载
      */
@@ -82,6 +85,13 @@ public class FileDownloader {
     }
 
     /**
+     * 清空累计下载
+     */
+    protected synchronized void clearDownSize() {
+        downloadSize = 0;
+    }
+
+    /**
      * 更新指定线程最后下载的位置
      * 
      * @param threadId 线程id
@@ -108,7 +118,6 @@ public class FileDownloader {
             URL url = new URL(this.downloadUrl);
             if (!fileSaveDir.exists()) // 判断目录是否存在，如果不存在，创建目录
                 fileSaveDir.mkdirs();
-            this.threads = new DownloadThread[threadNum];// 实例化线程数组
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(5 * 1000);
             conn.setRequestMethod("GET");
@@ -122,8 +131,18 @@ public class FileDownloader {
                     "User-Agent",
                     "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.2; Trident/4.0; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET CLR 3.0.04506.30; .NET CLR 3.0.4506.2152; .NET CLR 3.5.30729)");
             conn.setRequestProperty("Connection", "Keep-Alive");
+            conn.setRequestProperty("Accept-Ranges", "bytes");
             conn.connect(); // 连接
             printResponseHeader(conn);
+            Map<String, String> resHeader = getHttpResponseHeader(conn);
+            // 服务器是否支持分字节读取文件
+            if (resHeader.containsKey("Accept-Ranges")
+                    && "bytes".equals(resHeader.get("Accept-Ranges"))) {
+                isAccepteRange = true;
+            } else {
+                threadNum = 1;// 如果不支持分字节读取文件那么只能开一个线程
+            }
+            print("isAccepteRange:" + isAccepteRange);
             if (conn.getResponseCode() == 200) { // 响应成功
                 this.fileSize = conn.getContentLength();// 根据响应获取文件大小
                 if (this.fileSize <= 0)
@@ -137,7 +156,8 @@ public class FileDownloader {
                     for (Map.Entry<Integer, Integer> entry : logdata.entrySet())
                         data.put(entry.getKey(), entry.getValue());// 把各条线程已经下载的数据长度放入data中
                 }
-                if (this.data.size() == this.threads.length) {// 下面计算所有线程已经下载的数据总长度
+                this.threads = new DownloadThread[threadNum];// 实例化线程数组
+                if (this.data.size() == this.threads.length && isAccepteRange) {// 下面计算所有线程已经下载的数据总长度
                     for (int i = 0; i < this.threads.length; i++) {
                         this.downloadSize += this.data.get(i + 1);
                     }
@@ -152,6 +172,7 @@ public class FileDownloader {
             }
         } catch (Exception e) {
             print(e.toString());
+            Toast.makeText(context, "访问出错：" + e, Toast.LENGTH_SHORT).show();
             throw new RuntimeException("don't connection this url");
         }
     }
@@ -235,13 +256,17 @@ public class FileDownloader {
                 if (listener != null)
                     listener.onDownloadingSize(downloadUrl, this.downloadSize);// 通知目前已经下载完成的数据长度
             }
-            if (downloadSize == this.fileSize) {
+            if (downloadSize >= this.fileSize) {
                 isFinished = true;
                 fileService.delete(this.downloadUrl);// 下载完成删除记录
                 if (listener != null)
                     listener.onDownloadingSize(downloadUrl, this.downloadSize);// 通知目前已经下载完成
-            } else if (listener != null) {
+            } else if (listener != null) { // 发送暂停消息
                 listener.onPause(downloadUrl);
+            }
+            // 如果不支持断点续传，暂停必须清空已经下载
+            if (!isAcceptRange()) {
+                clearDownSize();
             }
         } catch (Exception e) {
             print("错误e:" + e.toString());
@@ -279,6 +304,15 @@ public class FileDownloader {
             String key = entry.getKey() != null ? entry.getKey() + ":" : "";
             print(key + entry.getValue());
         }
+    }
+
+    /**
+     * 是否支持多线程的断点续传（是否支持分字节读取）
+     * 
+     * @return
+     */
+    public boolean isAcceptRange() {
+        return isAccepteRange;
     }
 
     public boolean isFinished() {

@@ -16,7 +16,7 @@ public class DownloadThread extends Thread {
     private int block;
     /* 下载开始位置 */
     private int threadId = -1;
-    private int downLength;
+    private int downLength = 0;
     private boolean finish = false;
     private FileDownloader downloader;
 
@@ -27,7 +27,9 @@ public class DownloadThread extends Thread {
         this.block = block;
         this.downloader = downloader;
         this.threadId = threadId;
-        this.downLength = downLength;
+        if (downloader.isAcceptRange()) {
+            this.downLength = downLength;
+        }
     }
 
     @Override
@@ -57,6 +59,7 @@ public class DownloadThread extends Thread {
 
                 // 得到输入流
                 InputStream inStream = http.getInputStream();
+                // inStream.
                 byte[] buffer = new byte[1024];
                 int offset = 0;
                 print("Thread " + this.threadId

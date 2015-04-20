@@ -61,7 +61,6 @@ public class MainActivity extends Activity {
         paths.add("http://abv.cn/music/list.php");
         paths.add("http://abv.cn/music/光辉岁月.mp3");
         paths.add("http://sc.111ttt.com/up/mp3/304296/937161E63A1D57484158C7464D7B50B7.mp3");
-        paths.add("http://mp3.wooeu.com/mp3.php/19344853/mp3wooeu.mp3");
         paths.add("http://qzone.haoduoge.com/music5/2015-04-19/1429440483.mp3");
         paths.add("http://qzone.haoduoge.com/music5/2015-04-19/1429436647.mp3");
         paths.add("http://qzone.haoduoge.com/music5/2015-04-19/1429440637.mp3");
@@ -85,8 +84,8 @@ public class MainActivity extends Activity {
 
         ProgressBar progressBar = mAdapter.getProgressBar(path);
         progressBar.setProgress(size);
-        // print("handler msg size:" + size);
-        // print("handler msg size max" + progressBar.getMax());
+        print("handler msg size:" + size);
+        print("handler msg size max" + progressBar.getMax());
         float num = (float) progressBar.getProgress()
                 / (float) progressBar.getMax();
         int result = (int) (num * 100); // 计算进度
