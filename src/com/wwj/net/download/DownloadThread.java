@@ -76,12 +76,13 @@ public class DownloadThread extends Thread {
                     threadfile.write(buffer, 0, offset);
                     downLength += offset; // 累加下载的大小
                     long currentData = System.currentTimeMillis();
-                    if (currentData - lastUpdate > 500) {
+                    if (currentData - lastUpdate > 200) {
                         lastUpdate = currentData;
                         downloader.update(this.threadId, downLength); // 更新指定线程下载最后的位置
                     }
                     downloader.append(offset); // 累加已下载大小
                 }
+                downloader.update(this.threadId, downLength);// 下载暂停以后再保存一次
                 threadfile.close();
                 inStream.close();
                 print("Thread " + this.threadId + " download finish");

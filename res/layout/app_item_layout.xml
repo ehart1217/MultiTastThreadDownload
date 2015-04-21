@@ -1,0 +1,98 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="72dip"
+    android:layout_gravity="center_vertical"
+    android:gravity="center_vertical" >
+
+    <RelativeLayout
+        android:layout_width="fill_parent"
+        android:layout_height="72dip"
+        android:background="@drawable/choiceness_list_item_bg" >
+
+        <ImageView
+            android:id="@+id/app_icon_imageView"
+            android:layout_width="48dip"
+            android:layout_height="48dip"
+            android:layout_alignParentLeft="true"
+            android:layout_centerVertical="true"
+            android:layout_marginRight="8dip"
+            android:background="@drawable/my_icon"
+            android:contentDescription="@null"/>
+
+        <com.wwj.download.view.CircleProgressBar
+            android:id="@+id/app_download_button"
+            android:layout_width="32dip"
+            android:layout_height="32dip"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:focusable="false" 
+            android:textColor="@color/app_item_str_color_04"
+            android:textSize="@dimen/str_size_10"
+            android:gravity="center"
+            />
+
+        <TextView
+            android:id="@+id/app_name_textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/app_icon_imageView"
+            android:layout_toRightOf="@+id/app_icon_imageView"
+            android:gravity="left|center_vertical"
+            android:singleLine="true"
+            android:text="TextView"
+            android:textColor="@color/tabhost_text_color_h"
+            android:textSize="@dimen/app_str_size_14" />
+
+        <LinearLayout
+            android:id="@+id/heart_layout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignLeft="@+id/app_name_textView"
+            android:layout_below="@+id/app_name_textView"
+            android:layout_marginTop="2dip"
+            android:gravity="center_vertical"
+            android:orientation="horizontal" >
+
+            <ImageView
+                android:id="@+id/imageView1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:contentDescription="@null"
+                android:src="@drawable/app_heat" />
+
+            <TextView
+                android:id="@+id/app_heat_textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:singleLine="true"
+                android:text="TextView"
+                android:textColor="@color/app_top_radio_color_h"
+                android:textSize="@dimen/app_str_size_11" />
+
+            <TextView
+                android:id="@+id/app_size_textView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="14dp"
+                android:singleLine="true"
+                android:text="TextView"
+                android:textColor="@color/app_item_str_color_02"
+                android:textSize="@dimen/app_str_size_11" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/app_content_textView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/heart_layout"
+            android:layout_marginTop="2dip"
+            android:layout_toLeftOf="@+id/app_download_button"
+            android:layout_toRightOf="@+id/app_icon_imageView"
+            android:gravity="left|center_vertical"
+            android:singleLine="true"
+            android:text="TextView"
+            android:textColor="@color/app_item_str_color_03"
+            android:textSize="@dimen/app_str_size_12" />
+    </RelativeLayout>
+
+</LinearLayout>

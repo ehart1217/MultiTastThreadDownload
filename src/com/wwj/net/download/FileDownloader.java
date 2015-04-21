@@ -254,13 +254,18 @@ public class FileDownloader {
                 if (listener != null)
                     listener.onDownloadingSize(downloadUrl, this.downloadSize);// 通知目前已经下载完成的数据长度
             }
-            if (downloadSize >= this.fileSize) {
+            if (downloadSize == this.fileSize) {
                 isFinished = true;
-                fileService.delete(this.downloadUrl);// 下载完成删除记录
+                // fileService.delete(this.downloadUrl);// 下载完成删除记录
                 if (listener != null)
                     listener.onDownloadingSize(downloadUrl, this.downloadSize);// 通知目前已经下载完成
-            } else if (listener != null) { // 发送暂停消息
+            } else if (listener != null && downloadSize < this.fileSize) { // 发送暂停消息
                 listener.onPause(downloadUrl);
+            } else if (listener != null && downloadSize > this.fileSize) {
+                // 异常，删除记录
+                isFinished = true;
+                fileService.delete(this.downloadUrl);// 下载完成删除记录
+                listener.onDownloadingSize(downloadUrl, this.downloadSize);// 通知目前已经下载完成
             }
             // 如果不支持断点续传，暂停必须清空已经下载
             if (!isAcceptRange()) {

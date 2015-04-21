@@ -10,10 +10,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.wwj.download.adapter.DownloadListAdapter;
+import com.wwj.download.adapter.DownloadListAdapter.UrlBean;
+import com.wwj.download.view.CircleProgressBar;
+import com.wwj.download.view.CircleProgressBar.BtnStatus;
 import com.wwj.net.download.DownloadService;
 
 public class MainActivity extends Activity {
@@ -30,16 +32,18 @@ public class MainActivity extends Activity {
         public void handleMessage(Message msg) {
             String path = msg.getData().getString(DownloadService.PATH);
             switch (msg.what) {
-                case PROCESSING: // 更新进度
+            // 更新进度
+                case PROCESSING:
                     // print("handler msg path:" + path);
-
                     updateListView(path, msg.getData().getInt("size"));
                     break;
-                case FAILURE: // 下载失败
+                // 下载失败
+                case FAILURE:
                     Toast.makeText(getApplicationContext(), R.string.error,
                             Toast.LENGTH_LONG).show();
                     updateListViewPause(path);// 更新UI,切换开关
-                case DownloadService.PAUSE: // 暂停
+                    // 暂停
+                case DownloadService.PAUSE:
                     updateListViewPause(path);// 更新UI,切换开关
                     break;
                 case DownloadService.MSG_BAR_MAX:
@@ -57,16 +61,31 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         mContext = this;
         setContentView(R.layout.main);
-        List<String> paths = new ArrayList<String>();
-        paths.add("http://abv.cn/music/list.php");
-        paths.add("http://abv.cn/music/光辉岁月.mp3");
-        paths.add("http://sc.111ttt.com/up/mp3/304296/937161E63A1D57484158C7464D7B50B7.mp3");
-        paths.add("http://qzone.haoduoge.com/music5/2015-04-19/1429440483.mp3");
-        paths.add("http://qzone.haoduoge.com/music5/2015-04-19/1429436647.mp3");
-        paths.add("http://qzone.haoduoge.com/music5/2015-04-19/1429440637.mp3");
+        List<UrlBean> beans = new ArrayList<UrlBean>();
+        UrlBean bean1 = new UrlBean("http://abv.cn/music/光辉岁月.mp3", "光辉岁月", "黄家驹唱的", "热度：很热",
+                "4Mb",
+                getResources().getDrawable(R.drawable.my_icon));
+        UrlBean bean2 = new UrlBean(
+                "http://sc.111ttt.com/up/mp3/304296/937161E63A1D57484158C7464D7B50B7.mp3",
+                "1231234124",
+                "test", "热度：很热",
+                "4Mb",
+                getResources().getDrawable(R.drawable.my_icon));
+        UrlBean bean3 = new UrlBean("http://qzone.haoduoge.com/music5/2015-04-19/1429440483.mp3",
+                "test", "一个不支持断点续传的链接", "热度：不热",
+                "4Mb",
+                getResources().getDrawable(R.drawable.my_icon));
+        UrlBean bean4 = new UrlBean("http://qzone.haoduoge.com/music5/2015-04-19/1429440637.mp3",
+                "test", "test", "热度：很热",
+                "4Mb",
+                getResources().getDrawable(R.drawable.my_icon));
+        beans.add(bean1);
+        beans.add(bean2);
+        beans.add(bean3);
+        beans.add(bean4);
 
         ListView listView = (ListView) this.findViewById(R.id.download_listview);
-        mAdapter = new DownloadListAdapter(mContext, paths, mHandler);
+        mAdapter = new DownloadListAdapter(mContext, beans, mHandler);
         listView.setAdapter(mAdapter);
     }
 
@@ -77,33 +96,37 @@ public class MainActivity extends Activity {
     }
 
     /**
+     * 更新进度
+     * 
      * @param path
      * @param size
      */
     private void updateListView(String path, int size) {
 
-        ProgressBar progressBar = mAdapter.getProgressBar(path);
+        CircleProgressBar progressBar = mAdapter.getProgressBar(path);
         progressBar.setProgress(size);
         print("handler msg size:" + size);
         print("handler msg size max" + progressBar.getMax());
-        float num = (float) progressBar.getProgress()
-                / (float) progressBar.getMax();
-        int result = (int) (num * 100); // 计算进度
-        mAdapter.getResultView(path).setText(result + "%");
+        // float num = (float) progressBar.getProgress()
+        // / (float) progressBar.getMax();
+        // int result = (int) (num * 100); // 计算进度
 
         if (progressBar.getProgress() == progressBar.getMax()) {
             Toast.makeText(getApplicationContext(), R.string.success,
                     Toast.LENGTH_LONG).show();
-            btnChange(path, true);
+            // 下载完成，把按钮改成已下载
+            btnChange(path, BtnStatus.done);
 
         } else {
-            btnChange(path, false);
+            // 未下载完成，正在下载,把按钮改成正在下载
+            btnChange(path, BtnStatus.downloading);
         }
-        mAdapter.notifyDataSetChanged();
+        // mAdapter.notifyDataSetChanged();
     }
 
+    // 暂停的反应
     private void updateListViewPause(String path) {
-        btnChange(path, true);
+        btnChange(path, BtnStatus.pause);
     }
 
     /**
@@ -112,9 +135,8 @@ public class MainActivity extends Activity {
      * @param path
      * @param b start设置为b；pause设置为!b
      */
-    private void btnChange(String path, boolean b) {
-        mAdapter.getViewHolder(path).downloadBtn.setEnabled(b);
-        mAdapter.getViewHolder(path).pauseBtn.setEnabled(!b);
+    private void btnChange(String path, BtnStatus btnStatus) {
+        mAdapter.getViewHolder(path).progressBar.setStatus(btnStatus);
     }
 
     private void print(String str) {

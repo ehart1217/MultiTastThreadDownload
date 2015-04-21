@@ -8,10 +8,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.drawable.Drawable;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
@@ -20,14 +22,14 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ProgressBar;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.wwj.download.R;
 import com.wwj.download.util.CommonTools;
+import com.wwj.download.view.CircleProgressBar;
+import com.wwj.download.view.CircleProgressBar.BtnStatus;
 import com.wwj.net.download.DownloadService;
 import com.wwj.net.download.FileService;
 
@@ -40,14 +42,23 @@ public class DownloadListAdapter extends BaseAdapter {
     public static final String DOWNLOAD = "download";
 
     public static class ViewHolder {
-        public EditText editView;
-        public Button downloadBtn;
-        public Button pauseBtn;
-        public ProgressBar progressBar;
-        public TextView resultView;
+        // app_icon_imageView app_name_textView app_heat_textView
+        // app_size_textView app_content_textView app_download_button
+
+        public ImageView ivIcon;
+        public TextView tvName;
+        public TextView tvHeat;
+        public TextView tvSize;
+        public TextView tvContent;
+        public CircleProgressBar progressBar;
+        // public EditText editView;
+        // public Button downloadBtn;
+        // public Button pauseBtn;
+        // public CircleProgressBar progressBar;
+        // public TextView resultView;
     }
 
-    private List<String> mPaths;
+    private List<UrlBean> mBeans;
     private List<String> mEncodedPaths;
     private Context mContext;
     private DownloadService mService;
@@ -66,15 +77,15 @@ public class DownloadListAdapter extends BaseAdapter {
      * @param paths 下载路径列表
      * @param handler 通知更新UI
      */
-    public DownloadListAdapter(Context context, List<String> paths, Handler handler) {
-        mPaths = paths;
+    public DownloadListAdapter(Context context, List<UrlBean> beans, Handler handler) {
+        mBeans = beans;
         mContext = context;
         mHandler = handler;
         mHolders = new HashMap<String, ViewHolder>();
         mConvertViews = new ArrayList<View>();
         mEncodedPaths = new ArrayList<String>();
-        for (String path : paths) {
-            String encodedPath = encodePath(path);
+        for (UrlBean bean : mBeans) {
+            String encodedPath = encodePath(bean.url);
             mEncodedPaths.add(encodedPath);
         }
         createViews(mEncodedPaths);
@@ -96,32 +107,45 @@ public class DownloadListAdapter extends BaseAdapter {
         return position;
     }
 
+    @SuppressLint("NewApi")
     @Override
     public View getView(final int position, View convertView, ViewGroup parent) {
         String path = mEncodedPaths.get(position);// 获得已转码路径
+        // 获得item的数据集合
+        UrlBean bean = mBeans.get(position);
         ViewHolder viewHolder = (ViewHolder) mConvertViews.get(position).getTag();
-        // 设置进度条
-        viewHolder.progressBar.setMax(getFileSize(path));
-        viewHolder.progressBar.setProgress(getDownloadSize(path));
-        // 设置已下载百分比
-        float num = (float) viewHolder.progressBar.getProgress()
-                / (float) viewHolder.progressBar.getMax();
-        int result = (int) (num * 100); // 计算进度
-        viewHolder.resultView.setText(result + "%");
-        // 路径显示出来。
-        viewHolder.editView.setText(mPaths.get(position));
-        viewHolder.downloadBtn.setOnClickListener(new View.OnClickListener() {
+        // 计算已下载百分比
+        // float num = (float) viewHolder.progressBar.getProgress()
+        // / (float) viewHolder.progressBar.getMax();
+        // int result = (int) (num * 100); // 计算进度
+
+        viewHolder.tvName.setText(bean.name);
+        viewHolder.tvContent.setText(bean.content);
+        viewHolder.tvHeat.setText(bean.heat);
+        viewHolder.tvSize.setText(bean.size);
+        viewHolder.ivIcon.setBackground(bean.icon);
+
+        final CircleProgressBar progressBar = viewHolder.progressBar;
+        progressBar.setOnClickListener(new View.OnClickListener() {
 
             @Override
             public void onClick(View v) {
-                clickDownloadBtn(mEncodedPaths.get(position));
-            }
-        });
-        viewHolder.pauseBtn.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                clickPauseBtn(mEncodedPaths.get(position));
+                switch (progressBar.getStatus()) {
+                    case ready:
+                        clickDownloadBtn(mEncodedPaths.get(position));
+                        break;
+                    case downloading:
+                        clickPauseBtn(mEncodedPaths.get(position));
+                        break;
+                    case pause:
+                        clickDownloadBtn(mEncodedPaths.get(position));
+                        break;
+                    case done:
+                        // TODO 下载完成点击安装
+                        break;
+                    default:
+                        break;
+                }
             }
         });
 
@@ -130,16 +154,33 @@ public class DownloadListAdapter extends BaseAdapter {
 
     void createViews(List<String> paths) {
         for (String path : paths) {
-            View convertView = LayoutInflater.from(mContext).inflate(R.layout.download_item, null);
+            View convertView = LayoutInflater.from(mContext)
+                    .inflate(R.layout.app_item_layout, null);
             ViewHolder viewHolder = new ViewHolder();
-            viewHolder.editView = (EditText) convertView.findViewById(R.id.path);
-            viewHolder.downloadBtn = (Button) convertView.findViewById(R.id.downloadbutton);
-            viewHolder.pauseBtn = (Button) convertView.findViewById(R.id.stopbutton);
-            viewHolder.progressBar = (ProgressBar) convertView.findViewById(R.id.progressBar);
-            viewHolder.resultView = (TextView) convertView.findViewById(R.id.resultView);
+            viewHolder.tvName = (TextView) convertView.findViewById(R.id.app_name_textView);
+            viewHolder.tvContent = (TextView) convertView.findViewById(R.id.app_content_textView);
+            viewHolder.tvHeat = (TextView) convertView.findViewById(R.id.app_heat_textView);
+            viewHolder.progressBar = (CircleProgressBar) convertView
+                    .findViewById(R.id.app_download_button);
+            viewHolder.tvSize = (TextView) convertView.findViewById(R.id.app_size_textView);
+            viewHolder.ivIcon = (ImageView) convertView.findViewById(R.id.app_icon_imageView);
             convertView.setTag(viewHolder);
             mConvertViews.add(convertView);
             mHolders.put(path, viewHolder);
+
+            // 读取数据库获得已下载的大小
+            viewHolder.progressBar.setMax(getFileSize(path));
+            viewHolder.progressBar.setProgress(getDownloadSize(path));
+            // 已经下载过了 设置为暂停状态
+            if (getDownloadSize(path) > 0 && getDownloadSize(path) < getFileSize(path)) {
+                viewHolder.progressBar.setStatus(BtnStatus.pause);
+            }
+            // 还没开始下载设置为ready状态
+            else if (getDownloadSize(path) == 0) {
+                viewHolder.progressBar.setStatus(BtnStatus.ready);
+            } else if (getDownloadSize(path) == getFileSize(path)) {
+                viewHolder.progressBar.setStatus(BtnStatus.done);
+            }
         }
     }
 
@@ -183,19 +224,19 @@ public class DownloadListAdapter extends BaseAdapter {
      * @param path
      * @return
      */
-    public ProgressBar getProgressBar(String path) {
+    public CircleProgressBar getProgressBar(String path) {
         return mHolders.get(path).progressBar;
     }
 
-    /**
-     * 得到下载百分比显示
-     * 
-     * @param path
-     * @return
-     */
-    public TextView getResultView(String path) {
-        return mHolders.get(path).resultView;
-    }
+    // /**
+    // * 得到下载百分比显示
+    // *
+    // * @param path
+    // * @return
+    // */
+    // public TextView getResultView(String path) {
+    // return mHolders.get(path).resultView;
+    // }
 
     public ViewHolder getViewHolder(String path) {
         return mHolders.get(path);
@@ -282,5 +323,24 @@ public class DownloadListAdapter extends BaseAdapter {
 
     public static void print(String str) {
         Log.i(DOWNLOAD, str);
+    }
+
+    public static class UrlBean {
+        public UrlBean(String url, String name, String content, String heat, String size,
+                Drawable icon) {
+            this.url = url;
+            this.name = name;
+            this.content = content;
+            this.heat = heat;
+            this.size = size;
+            this.icon = icon;
+        }
+
+        public String url;
+        public String name;
+        public String content;
+        public String heat;
+        public String size;
+        public Drawable icon;
     }
 }

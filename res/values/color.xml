@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- 首页背景 -->
+    <color name="main_color">#f5f5f5</color>
+    <color name="xinwen_all_title_color">#383433</color>
+    <color name="choiceness_list_item_h_color">#e1e1e1</color>
+    <color name="choiceness_list_item_color">#f5f5f5</color>
+    <color name="choiceness_list_item_kk_color">#d2d2d2</color>
+    <color name="tabhost_text_color">#d73a3a</color>
+    <color name="tabhost_text_color_h">#333333</color>
+    <color name="choiceness_zhibo_text_color">#231815</color>
+    <color name="choiceness_xw_content_text_color">#595757</color>
+
+    <!-- 应用头部  radio 字体颜色 -->
+    <color name="app_top_radio_color">#FFFFFF</color>
+    <color name="app_top_radio_color_h">#d13030</color>
+    <!-- 应用item字体颜色 -->
+    <color name="app_item_str_color_02">#999999</color>
+    <color name="app_item_str_color_03">#666666</color>
+    <color name="app_item_str_color_04">#1db8c1</color>
+
+    <!-- 黑色 -->
+    <color name="white">#FFFFFF</color>
+    <!-- 白色 -->
+    <color name="black">#000000</color>
+
+    <!-- 透明色 -->
+    <color name="transparent">#00000000</color>
+    <color name="transparent2">#02000000</color>
+    <color name="listview_bg">#88838383</color>
+    <color name="color2">#f0f5f5</color>
+
+    <!-- 非编辑字体色 -->
+    <color name="color3">#17a2d4</color>
+
+    <!-- 绿色#80B400 -->
+    <color name="green">#80B400</color>
+    <!-- 灰色：#666666 -->
+    <color name="gray">#666666</color>
+    <!-- 蓝色：#666666 -->
+    <color name="blue">#0E77A5</color>
+
+    <!-- 列表点击色#CFF1FF -->
+    <color name="list_bg">#BFE8F5</color>
+
+    <!-- 输入框提示色#c9c9c9 -->
+    <color name="input_box">#c9c9c9</color>
+    <color name="prompt_red">#fa071e</color>
+
+    <!-- 二维码 -->
+    <color name="login_view_text_color">#7a4801</color>
+    <color name="remember_pw_text_color">#616161</color>
+    <color name="top_text_color">#fff5e7</color>
+    <color name="result_color">#333333</color>
+    <color name="contents_text">#ff000000</color>
+    <color name="encode_view">#ffffffff</color>
+    <color name="help_button_view">#ffcccccc</color>
+    <color name="help_view">#ff404040</color>
+    <color name="possible_result_points">#c0ffff00</color>
+    <color name="result_image_border">#ffffffff</color>
+    <color name="result_minor_text">#ffc0c0c0</color>
+    <color name="result_points">#c000ff00</color>
+    <color name="result_text">#ffffffff</color>
+    <color name="result_view">#b0000000</color>
+    <color name="sbc_header_text">#ff808080</color>
+    <color name="sbc_header_view">#ffffffff</color>
+    <color name="sbc_list_item">#fffff0e0</color>
+    <color name="sbc_layout_view">#ffffffff</color>
+    <color name="sbc_page_number_text">#ff000000</color>
+    <color name="sbc_snippet_text">#ff4b4b4b</color>
+    <color name="share_text">#ff000000</color>
+    <color name="share_view">#ffffffff</color>
+    <color name="status_view">#50000000</color>
+    <color name="status_text">#ffffffff</color>
+    <color name="viewfinder_frame">#ff000000</color>
+    <color name="viewfinder_laser">#ffff0000</color>
+    <color name="viewfinder_mask">#60000000</color>
+    <color name="help_url_color">#31abf8</color>
+
+    <!-- 分享 -->
+    <color name="body_text_1">#ff000000</color>
+    <color name="body_text_2">#99000000</color>
+    <color name="body_text_disabled">#66000000</color>
+    <color name="body_text_1_inverse">#ffffffff</color>
+    <color name="body_text_2_inverse">#99ffffff</color>
+    <color name="accent_1">#ff29549f</color>
+    <color name="hyperlink">#ffff549f</color>
+    <color name="background_1">#ffffffff</color>
+    <color name="whats_on_separator">#4d000000</color>
+    <color name="all_track_color">#ff222222</color>
+    <color name="block_column_1">#ff0fabff</color>
+    <color name="block_column_2">#ffdf1831</color>
+    <color name="block_column_3">#ff009939</color>
+
+    <!-- 分享 结束 -->
+
+    <color name="background_window">#FFE5E5E5</color>
+    <color name="background_tab_pressed">#6633B5E5</color>
+
+</resources>
